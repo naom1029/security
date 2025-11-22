@@ -68,16 +68,19 @@ export const handleAuthCallback = async (url: string): Promise<TokenResponse | n
 
   // ---------------------------------------------------------------------------
   // 【セキュリティ解説: /token エンドポイント】
-  // このリクエストは HTTPS の POST メソッドで行われ、パラメータは Body に格納されます。
-  // URL ではないため、ブラウザの履歴や Referer には残りません。
+  // ■ なぜ POST (Body) が使えるのか？
+  // /token はブラウザのリダイレクトではなく、クライアントから IdP への
+  // 直接的な API コール（非インタラクティブ）です。
+  // そのため、HTTP POST メソッドを使用でき、データを Body に格納できます。
   //
-  // 通信経路は TLS (HTTPS) で暗号化されているため、
-  // ネットワーク経路上で Body の中身（code_verifier など）を盗聴することは困難です。
+  // ■ 安全性の担保
+  // Body の内容は TLS (HTTPS) によって暗号化されたトンネル内を通るため、
+  // URL のようにブラウザ履歴やログに残らず、外部からの盗聴も極めて困難です。
   //
-  // つまり、/authorize の段階では URL 経由で code が漏れるリスクがありましたが、
-  // /token の段階では HTTPS によって安全性が担保されています。
-  // ここで code_verifier を送ることで、最初の /authorize リクエストをした者と
-  // 同一人物であることを証明し、安全にトークンを取得します。
+  // ■ 構造的な役割分担
+  // /authorize (GET): ブラウザの世界。URL露出リスクがあるため PKCE で補強。
+  // /token (POST): APIの世界。HTTPS (TLS) で安全。
+  // ここで code_verifier (秘密鍵) を安全に送信し、認可コードの正当性を証明します。
   // ---------------------------------------------------------------------------
   const res = await fetch(OIDC_CONFIG.endpoints.token, {
     method: 'POST',
