@@ -1,7 +1,7 @@
 import { OIDC_CONFIG } from './config'
 import { generateCodeVerifier, createCodeChallenge, saveCodeVerifier } from './pkce'
 
-const STATE_KEY = 'oicd.state'
+const STATE_KEY = 'oidc.state'
 
 const generateRandomState = (length = 32): string => {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
@@ -20,14 +20,12 @@ const saveState = (state: string) => {
 
 export const loadAndClearState = (): string | null => {
   const s = sessionStorage.getItem(STATE_KEY)
-  if (s) {
-    sessionStorage.removeItem(STATE_KEY)
-  }
+  if (s) sessionStorage.removeItem(STATE_KEY)
   return s
 }
 
 export const buildAuthorizationUrl = async (): Promise<string> => {
-  const { authority, clientId, redirectUri, scope } = OIDC_CONFIG
+  const { endpoints, clientId, redirectUri, scope } = OIDC_CONFIG
 
   const codeVerifier = generateCodeVerifier()
   const codeChallenge = await createCodeChallenge(codeVerifier)
@@ -46,7 +44,7 @@ export const buildAuthorizationUrl = async (): Promise<string> => {
     state,
   })
 
-  return `${authority}authorize?${params.toString()}`
+  return `${endpoints.authorization}?${params.toString()}`
 }
 
 export const redirectToLogin = async () => {

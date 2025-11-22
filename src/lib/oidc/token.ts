@@ -1,9 +1,7 @@
+// src/oidc/token.ts
 import { OIDC_CONFIG } from './config'
-import { loadCodeVerifer } from './pkce'
+import { loadCodeVerifier } from './pkce'
 import { loadAndClearState } from './authorize'
-import { url } from 'inspector'
-import { loadavg } from 'os'
-import { json } from 'stream/consumers'
 
 export interface TokenResponse {
   access_token: string
@@ -29,6 +27,10 @@ export const loadTokenResponse = (): TokenResponse | null => {
   }
 }
 
+export const clearTokenResponse = () => {
+  sessionStorage.removeItem(TOKEN_KEY)
+}
+
 export const handleAuthCallback = async (url: string): Promise<TokenResponse | null> => {
   const parsed = new URL(url)
   const code = parsed.searchParams.get('code')
@@ -36,18 +38,23 @@ export const handleAuthCallback = async (url: string): Promise<TokenResponse | n
   const error = parsed.searchParams.get('error')
 
   if (error) {
-    console.error('Authorization error:', error)
+    console.error('OIDC error', error)
+    return null
+  }
+  if (!code || !state) {
+    console.error('Missing code or state')
     return null
   }
 
   const originalState = loadAndClearState()
   if (!originalState || originalState !== state) {
-    console.error('Invalid state')
+    console.error('State mismatch')
     return null
   }
-  const codeVerifier = loadCodeVerifer()
+
+  const codeVerifier = loadCodeVerifier()
   if (!codeVerifier) {
-    console.error('Code verifier not found')
+    console.error('No PKCE code_verifier')
     return null
   }
 
@@ -59,8 +66,7 @@ export const handleAuthCallback = async (url: string): Promise<TokenResponse | n
     code_verifier: codeVerifier,
   })
 
-  const tokenEndpoint = `${OIDC_CONFIG.authority}oauth/token`
-  const response = await fetch(tokenEndpoint, {
+  const res = await fetch(OIDC_CONFIG.endpoints.token, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
@@ -68,11 +74,12 @@ export const handleAuthCallback = async (url: string): Promise<TokenResponse | n
     body,
   })
 
-  if (!response.ok) {
-    console.error('Token request failed:', response.statusText)
+  if (!res.ok) {
+    console.error('Token endpoint error', await res.text())
     return null
   }
-  const json = (await response.json()) as TokenResponse
+
+  const json = (await res.json()) as TokenResponse
   saveTokenResponse(json)
   return json
 }
