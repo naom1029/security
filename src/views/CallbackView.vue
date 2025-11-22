@@ -8,7 +8,7 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { handleAuthCallback } from '../lib/oidc/auth'
+import { handleAuthCallback } from '../lib/oidc/token'
 
 const router = useRouter()
 
