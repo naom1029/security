@@ -4,7 +4,7 @@ const REALM = 'demo'
 export const OIDC_CONFIG = {
   baseUrl: KEYCLOAK_BASE_URL,
   realm: REALM,
-  clientId: 'vue-oidc-sample',
+  clientId: 'vue-demo',
 
   redirectUri: 'http://localhost:5173/callback',
   logoutRedirectUri: 'http://localhost:5173/',

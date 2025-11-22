@@ -1,6 +1,6 @@
 const CODE_VERIFIER_KEY = 'pkce_code_verifier'
 
-export const generateCodeVerifier = (lengh = 64): string => {
+export const generateCodeVerifier = (length = 64): string => {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~'
 
   let result = ''

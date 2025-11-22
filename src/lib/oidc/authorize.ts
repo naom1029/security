@@ -44,7 +44,11 @@ export const buildAuthorizationUrl = async (): Promise<string> => {
     state,
   })
 
-  return `${endpoints.authorization}?${params.toString()}`
+  const url = `${endpoints.authorization}?${params.toString()}`
+  console.log('OIDC Authorization URL:', url)
+  console.log('OIDC Redirect URI:', redirectUri)
+
+  return url
 }
 
 export const redirectToLogin = async () => {
