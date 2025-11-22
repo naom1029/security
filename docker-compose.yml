@@ -16,7 +16,7 @@ services:
     depends_on:
       - postgres
     networks:
-      - superlogin-net
+      - spa-security-net
 
   postgres:
     image: postgres:15
@@ -27,10 +27,10 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - superlogin-net
+      - spa-security-net
 
 networks:
-  superlogin-net:
+  spa-security-net:
 
 volumes:
   postgres_data:
