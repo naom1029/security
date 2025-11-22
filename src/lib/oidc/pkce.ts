@@ -20,8 +20,8 @@ const base64UrlEncode = (buffer: ArrayBuffer): string => {
   return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 }
 
-export const createCodeChallenge = async (verifer: string): Promise<string> => {
-  const data = new TextEncoder().encode(verifer)
+export const createCodeChallenge = async (verifier: string): Promise<string> => {
+  const data = new TextEncoder().encode(verifier)
   const digest = await crypto.subtle.digest('SHA-256', data)
   return base64UrlEncode(digest)
 }
@@ -30,7 +30,7 @@ export const saveCodeVerifier = (verifier: string): void => {
   sessionStorage.setItem(CODE_VERIFIER_KEY, verifier)
 }
 
-export const loadCodeVerifer = (): string | null => {
+export const loadCodeVerifier = (): string | null => {
   const v = sessionStorage.getItem(CODE_VERIFIER_KEY)
   if (v) {
     sessionStorage.removeItem(CODE_VERIFIER_KEY)
