@@ -44,6 +44,16 @@ export const buildAuthorizationUrl = async (): Promise<string> => {
     state,
   })
 
+  // ---------------------------------------------------------------------------
+  // 【セキュリティ解説: /authorize エンドポイント】
+  // ここで生成される URL には、認可コード (code) が含まれることになります（リダイレクト後）。
+  // URL はブラウザの履歴、Referer、ログ、拡張機能などから参照可能であり、
+  // "code" は漏洩するリスクが高い場所（URL）を通ります。
+  //
+  // そのため、PKCE (Proof Key for Code Exchange) を使用して、
+  // 「このリクエストをしたのは正当なクライアントである」ことを証明するための
+  // code_challenge を事前に送っておきます。
+  // ---------------------------------------------------------------------------
   const url = `${endpoints.authorization}?${params.toString()}`
   console.log('OIDC Authorization URL:', url)
   console.log('OIDC Redirect URI:', redirectUri)

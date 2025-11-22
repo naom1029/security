@@ -66,6 +66,19 @@ export const handleAuthCallback = async (url: string): Promise<TokenResponse | n
     code_verifier: codeVerifier,
   })
 
+  // ---------------------------------------------------------------------------
+  // 【セキュリティ解説: /token エンドポイント】
+  // このリクエストは HTTPS の POST メソッドで行われ、パラメータは Body に格納されます。
+  // URL ではないため、ブラウザの履歴や Referer には残りません。
+  //
+  // 通信経路は TLS (HTTPS) で暗号化されているため、
+  // ネットワーク経路上で Body の中身（code_verifier など）を盗聴することは困難です。
+  //
+  // つまり、/authorize の段階では URL 経由で code が漏れるリスクがありましたが、
+  // /token の段階では HTTPS によって安全性が担保されています。
+  // ここで code_verifier を送ることで、最初の /authorize リクエストをした者と
+  // 同一人物であることを証明し、安全にトークンを取得します。
+  // ---------------------------------------------------------------------------
   const res = await fetch(OIDC_CONFIG.endpoints.token, {
     method: 'POST',
     headers: {
