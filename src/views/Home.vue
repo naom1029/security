@@ -18,13 +18,24 @@
 import { computed } from 'vue'
 import { OIDC_CONFIG } from '../lib/oidc/config'
 import { loadTokenResponse, clearTokenResponse } from '../lib/oidc/token'
-import { parseIdToken } from '../lib/oidc/idToken'
+import { parseIdToken, validateIdToken } from '../lib/oidc/idToken'
 import { redirectToLogin } from '../lib/oidc/authorize'
 
 const token = loadTokenResponse()
 const user = computed(() => {
   if (!token?.id_token) return null
-  return parseIdToken(token.id_token)
+  const payload = parseIdToken(token.id_token)
+  if (!payload) return null
+  const validation = validateIdToken(payload, {
+    issuer: OIDC_CONFIG.issuer,
+    clientId: OIDC_CONFIG.clientId,
+  })
+  if (!validation.valid) {
+    console.warn('ID token invalid:', validation.reason)
+    clearTokenResponse()
+    return null
+  }
+  return payload
 })
 
 const login = async () => {

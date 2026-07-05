@@ -1,5 +1,6 @@
 const CODE_VERIFIER_KEY = 'pkce_code_verifier'
 
+// code_verifier: 43〜128文字のランダム文字列 (RFC 7636 §4.1)
 export const generateCodeVerifier = (length = 64): string => {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~'
 
@@ -20,6 +21,7 @@ const base64UrlEncode = (buffer: ArrayBuffer): string => {
   return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 }
 
+// code_challenge = BASE64URL(SHA256(code_verifier)) (RFC 7636 §4.2)
 export const createCodeChallenge = async (verifier: string): Promise<string> => {
   const data = new TextEncoder().encode(verifier)
   const digest = await crypto.subtle.digest('SHA-256', data)

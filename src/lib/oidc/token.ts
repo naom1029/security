@@ -2,6 +2,7 @@
 import { OIDC_CONFIG } from './config'
 import { loadCodeVerifier } from './pkce'
 import { loadAndClearState } from './authorize'
+import { parseIdToken, validateIdToken } from './idToken'
 
 export interface TokenResponse {
   access_token: string
@@ -67,20 +68,19 @@ export const handleAuthCallback = async (url: string): Promise<TokenResponse | n
   })
 
   // ---------------------------------------------------------------------------
-  // 【セキュリティ解説: /token エンドポイント】
-  // ■ なぜ POST (Body) が使えるのか？
-  // /token はブラウザのリダイレクトではなく、クライアントから IdP への
-  // 直接的な API コール（非インタラクティブ）です。
-  // そのため、HTTP POST メソッドを使用でき、データを Body に格納できます。
+  // なぜ POST が使えるのか:
+  // /token はリダイレクトじゃなくクライアントから IdP への直接 API コール。
+  // ブラウザの画面遷移を伴わないので POST で Body に載せられる。(RFC 6749 §4.1.3)
   //
-  // ■ 安全性の担保
-  // Body の内容は TLS (HTTPS) によって暗号化されたトンネル内を通るため、
-  // URL のようにブラウザ履歴やログに残らず、外部からの盗聴も極めて困難です。
+  // 安全性:
+  // Body は TLS で暗号化されるので、URL みたいに履歴やログに残らない。
   //
-  // ■ 構造的な役割分担
-  // /authorize (GET): ブラウザの世界。URL露出リスクがあるため PKCE で補強。
-  // /token (POST): APIの世界。HTTPS (TLS) で安全。
-  // ここで code_verifier (秘密鍵) を安全に送信し、認可コードの正当性を証明します。
+  // 役割分担:
+  //   /authorize (GET) → ブラウザの世界。URL 露出リスクがあるから PKCE で補強
+  //   /token (POST)    → API の世界。TLS で保護される
+  // ここで code_verifier (ハッシュ化前の値) を送って、
+  // /authorize 時に code_challenge を送ったクライアントと同一であることを証明する。
+  // (RFC 7636 §4.5)
   // ---------------------------------------------------------------------------
   const res = await fetch(OIDC_CONFIG.endpoints.token, {
     method: 'POST',
@@ -96,6 +96,23 @@ export const handleAuthCallback = async (url: string): Promise<TokenResponse | n
   }
 
   const json = (await res.json()) as TokenResponse
+
+  if (json.id_token) {
+    const payload = parseIdToken(json.id_token)
+    if (!payload) {
+      console.error('Failed to parse id_token')
+      return null
+    }
+    const validation = validateIdToken(payload, {
+      issuer: OIDC_CONFIG.issuer,
+      clientId: OIDC_CONFIG.clientId,
+    })
+    if (!validation.valid) {
+      console.error('ID token validation failed:', validation.reason)
+      return null
+    }
+  }
+
   saveTokenResponse(json)
   return json
 }
